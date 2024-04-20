@@ -122,6 +122,21 @@ const playerName = function (req, res) {
 const updatePlayerTeam = function (req, res) {
   // Construct SQL query to update the player's team
   // Execute the update query and handle the response
+  const person_id = req.params.your_given_person_id;
+
+  connection.query(`
+  UPDATE common_player_info
+  SET team_name = 'new_team_name'
+  WHERE person_id = ?
+  `, [person_id], 
+  (err, data) => {
+    if (err || data.length === 0) {
+      console.log(err);
+      res.json({});
+    } else {
+      res.json(data);
+    }
+  });
 };
 
 // Route 8: GET /team_games/:user_team_id
@@ -144,6 +159,17 @@ const updateResult = function (req, res) {
   // Extract result data from request body
   // Construct SQL query to insert simulation result into the result table
   // Execute the insertion and handle the database response
+  connection.query(`
+  INSERT INTO game_result(user_team, opponent_team, user_team_result, opponent_team_result)
+  VALUES ('User Team Name', 'Opponent Team Name', user_team_score, opponent_team_score)
+  `, (err, data) => {
+    if (err || data.length === 0) {
+      console.log(err);
+      res.json({});
+    } else {
+      res.json(data);
+    }
+  });
 };
 
 // Route 11: GET /game_result/:game_id
@@ -151,6 +177,18 @@ const updateResult = function (req, res) {
 const gameResult = function (req, res) {
   // Construct SQL query to fetch the result of the specified game
   // Execute and handle the query response
+  connection.query(`
+  SELECT user_team, sum(user_team_result), COUNT(user_team_result)
+  FROM game_result
+  GROUP BY user_team
+  `, (err, data) => {
+    if (err || data.length === 0) {
+      console.log(err);
+      res.json({});
+    } else {
+      res.json(data);
+    }
+  });
 };
 
 module.exports = {
