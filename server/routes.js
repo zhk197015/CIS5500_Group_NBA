@@ -143,7 +143,35 @@ const updatePlayerTeam = function (req, res) {
 // Return a list of games that the team will need to play, ordered by some criteria
 const teamGames = function (req, res) {
   // Construct SQL query to get the upcoming games for the team
-  // Execute the query and return the list of games
+    // Execute the query and return the list of games
+    const user_team_id = req.params.user_team_id;
+    connection.query(`
+        SELECT
+            game_summary.home_team_id,
+            home_team.full_name AS home_team_name,
+            game_summary.visitor_team_id,
+            visitor_team.full_name AS visitor_team_name
+        FROM
+            game_info
+            INNER JOIN
+            game_summary ON game_info.game_id = game_summary.game_id
+            INNER JOIN
+            team AS home_team ON game_summary.home_team_id = home_team.id
+            INNER JOIN
+            team AS visitor_team ON game_summary.visitor_team_id = visitor_team.id
+            WHERE
+            game_summary.home_team_id = '${user_team_id}'
+            OR
+            game_summary.visitor_team_id = '${user_team_id}'`,
+    (err, data) => {
+            if (err || data.length == 0) {
+                console.log(err);
+                res.json({});
+            } else {
+                res.json(data);
+            }
+        
+}); 
 };
 
 // Route 9: GET /comparison/:game_id
@@ -151,6 +179,109 @@ const teamGames = function (req, res) {
 const comparison = function (req, res) {
   // Construct SQL query to get previous game details and important player positions
   // Execute the query and return player heights and weights for those positions
+  const user_current_game_id = req.params.user_current_game_id;
+  connection.query(`
+        WITH tem1 AS (
+            SELECT
+                *
+            FROM
+                play_by_play_test
+            WHERE
+                game_id='${user_current_game_id}'
+            ),
+        tem2 AS(
+            SELECT
+                person1type AS position,
+                COUNT(person1type) AS hl_position
+            FROM
+                tem1
+            GROUP BY
+                person1type
+            ORDER BY
+                COUNT(person1type) DESC
+            LIMIT 3
+            ),
+        tem3 AS (
+            SELECT
+                *
+            FROM
+                common_player_info
+            WHERE
+                team_id IN (
+                    SELECT
+                        home_team_id
+                    FROM
+                        game_summary
+                    WHERE
+                        game_id = '${user_current_game_id}'
+                    UNION
+                    SELECT
+                        visitor_team_id
+                    FROM
+                        game_summary
+                    WHERE
+                        game_id = '${user_current_game_id}'
+))
+        SELECT
+    CASE
+        WHEN AVG(actual_height) >= (
+            SELECT
+                MAX(average_height)
+            FROM
+                (
+                    SELECT
+                        AVG(actual_height) as average_height, tem2.position
+                    FROM
+                        tem2
+                    INNER JOIN
+                        tem3 ON tem2.position = tem3.position_id
+                    GROUP BY
+                        tem2.position
+                ) AS max_height
+            GROUP BY
+                max_height.position
+        ) THEN 1
+        ELSE 0
+    END AS taller,
+    CASE
+        WHEN AVG(weight) >= (
+            SELECT
+                MAX(average_weight)
+            FROM
+                (
+                    SELECT
+                        AVG(weight) as average_weight, tem2.position
+                    FROM
+                        tem2
+                    INNER JOIN
+                        tem3 ON tem2.position = tem3.position_id
+                    GROUP BY
+                        tem2.position
+                ) AS max_weight
+            GROUP BY
+                max_weight.position
+        ) THEN 1
+        ELSE 0
+    END AS heavier,
+    AVG(actual_height) AS average_height,
+    AVG(weight) AS average_weight,
+    team_id,
+    tem2.position
+FROM
+    tem2
+INNER JOIN
+    tem3 ON tem2.position = tem3.position_id
+GROUP BY
+    team_id, tem2.position;`,
+    (err, data) => {
+            if (err || data.length == 0) {
+                console.log(err);
+                res.json({});
+            } else {
+                res.json(data);
+            }
+        
+});
 };
 
 // Route 10: POST /update_result
@@ -203,4 +334,107 @@ module.exports = {
   deletePlayer,
   getAllMatches,
   getMatch
+};
+
+
+// Route 12: GET /comparison1/:game_id
+// Filter out the previous season and find the most important position(EX:Small ball era: postion 1 and 2 is important)
+const comparison1 = function (req, res) {
+  // Extract result data from request body
+  // Construct SQL query to insert simulation result into the result table
+  // Execute the insertion and handle the database response
+  const user_current_game_id = req.params.user_current_game_id;
+  connection.query(`
+  WITH tem1 AS(
+    SELECT
+        person1type AS position,
+        COUNT(person1type) AS IMPORTANT
+    FROM
+        play_by_play_test
+    GROUP BY
+        person1type
+    ORDER BY
+        COUNT(person1type)
+    LIMIT 2
+),
+tem2 AS (
+    SELECT
+        *
+    FROM
+        common_player_info
+    WHERE
+    team_id IN (
+        SELECT
+            home_team_id
+        FROM
+            game_summary
+        WHERE
+            game_id = '${user_current_game_id}'
+        UNION
+        SELECT
+            visitor_team_id
+        FROM
+            game_summary
+        WHERE
+            game_id = '${user_current_game_id}'
+))
+SELECT
+    CASE
+        WHEN AVG(actual_height) >= (
+            SELECT
+                MAX(average_height)
+            FROM
+                (
+                    SELECT
+                        AVG(actual_height) as average_height, tem1.position
+                    FROM
+                        tem1
+                    INNER JOIN
+                        tem2 ON tem1.position = tem2.position_id
+                    GROUP BY
+                        tem1.position
+                ) AS max_height
+            GROUP BY
+                max_height.position
+        ) THEN 1
+        ELSE 0
+    END AS taller,
+    CASE
+        WHEN AVG(weight) >= (
+            SELECT
+                MAX(average_weight)
+            FROM
+                (
+                    SELECT
+                        AVG(weight) as average_weight, tem1.position
+                    FROM
+                        tem1
+                    INNER JOIN
+                        tem2 ON tem1.position = tem2.position_id
+                    GROUP BY
+                        tem1.position
+                ) AS max_weight
+            GROUP BY
+                max_weight.position
+        ) THEN 1
+        ELSE 0
+    END AS heavier,
+    AVG(actual_height) AS average_height,
+    AVG(weight) AS average_weight,
+    team_id,
+    tem1.position
+FROM
+    tem1
+INNER JOIN
+    tem2 ON tem1.position = tem2.position_id
+GROUP BY
+    team_id, tem1.position
+  `, (err, data) => {
+    if (err || data.length === 0) {
+      console.log(err);
+      res.json({});
+    } else {
+      res.json(data);
+    }
+  });
 };
