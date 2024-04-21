@@ -101,13 +101,62 @@ const tradePageSearch = function (req, res) {
   // Extract search parameters from query string
   // Construct SQL query to perform a fuzzy search on player attributes
   // Execute the query and return the matching player's details
+  const weightLow = req.query.weight_low ?? 164;
+  const weightHigh = req.query.weight_high ?? 290;
+  const ageLow = req.query.age_low ?? 21;
+  const ageHigh = req.query.age_high ?? 44;
+  const heightLow = req.query.age_low ?? 30.48;
+  const heightHigh = req.query.age_high ?? 231.14;
 };
-
+connection.query(`
+WITH msy_height AS (select person_id,first_name,last_name, (CAST(SUBSTRING_INDEX(actual_height, "'", 1) AS UNSIGNED) * 30.48) +
+(CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(actual_height, "'", -1), '"', 1) AS UNSIGNED) * 2.54) AS height_cm
+FROM common_player_info)
+SELECT *
+FROM common_player_info, msy_height
+WHERE common_player_info.person_id= msy_height.person_id
+AND common_player_info.team_name LIKE '%${team_name}%'
+  AND common_player_info.position LIKE '%${position}%'
+  AND msy_height.height_cm >= ${heightLow}
+  AND msy_height.height_cm <= ${heightHigh}
+  AND common_player_info.weight >= ${weightLow}
+  AND common_player_info.weight <= ${weightHigh}
+  AND common_player_info.age >= ${ageLow} AND common_player_info.age <= ${ageHigh}
+ORDER BY team_name ASC;
+  `, (err, data) => {
+    if (err || data.length === 0) {
+      console.log(err);
+      res.json([]);
+    } else {
+      res.json(data);
+    }
+  });
 // Route 5: GET /trade_page_trading_card/:person_id
 // Get all players in the team given a person_id
 const tradePageTradingCard = function (req, res) {
   // Construct SQL query to retrieve all players from the same team as the given person_id
   // Execute the query and return all players' details
+  const person_id = req.params.your_given_person_id;
+
+  connection.query(`
+  WITH team_player as(SELECT team.full_name AS team_name, team.abbreviation,
+    concat(common_player_info.first_name,' ', common_player_info.last_name) AS player_name
+FROM team,common_player_info
+WHERE team.abbreviation=common_player_info.team_abbreviation
+order by team.full_name)
+SELECT team_player.team_name,team_player.player_name
+FROM team_player, common_player_info
+WHERE team_player.abbreviation = common_player_info.team_abbreviation
+AND person_id = ?
+  `, [person_id], 
+  (err, data) => {
+    if (err || data.length === 0) {
+      console.log(err);
+      res.json({});
+    } else {
+      res.json(data);
+    }
+  });
 };
 
 // Route 6: GET /player_name/:name
@@ -115,6 +164,26 @@ const tradePageTradingCard = function (req, res) {
 const playerName = function (req, res) {
   // Construct SQL query to fetch specific player details by name
   // Execute query and return the player's details
+  const person_id = req.params.your_given_person_id;
+
+  connection.query(`
+  select common_player_info.age, common_player_info.school,
+       common_player_info.country,player.first_name,player.last_name,
+       common_player_info.actual_height,common_player_info.weight, common_player_info.actual_position,
+       common_player_info.draft_round, common_player_info.draft_number
+From common_player_info, player
+WHERE common_player_info.person_id = player.id
+AND rosterstatus = 'Active'
+AND id = ?
+  `, [person_id], 
+  (err, data) => {
+    if (err || data.length === 0) {
+      console.log(err);
+      res.json({});
+    } else {
+      res.json(data);
+    }
+  });
 };
 
 // Route 7: PUT /player/:id/team
