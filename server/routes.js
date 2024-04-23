@@ -391,20 +391,6 @@ const gameResult = function (req, res) {
   });
 };
 
-module.exports = {
-  teamInfo,
-  createTeam,
-  updateTeam,
-  deleteTeam,
-  getAllPlayers,
-  getPlayer,
-  addPlayer,
-  updatePlayer,
-  deletePlayer,
-  getAllMatches,
-  getMatch
-};
-
 
 // Route 12: GET /comparison1/:game_id
 // Filter out the previous season and find the most important position(EX:Small ball era: postion 1 and 2 is important)
@@ -506,4 +492,19 @@ GROUP BY
       res.json(data);
     }
   });
+};
+
+module.exports = {
+  teamInfo,
+  getTeams,
+  getActivePlayers,
+  tradePageSearch,
+  tradePageTradingCard,
+  playerName,
+  updatePlayerTeam,
+  teamGames,
+  comparison,
+  updateResult,
+  gameResult,
+  comparison1
 };
