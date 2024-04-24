@@ -290,7 +290,8 @@ const comparison = function (req, res) {
                         game_summary
                     WHERE
                         game_id = '${user_current_game_id}'
-))
+)),
+tem4 AS (
         SELECT
     CASE
         WHEN AVG(actual_height) >= (
@@ -341,7 +342,13 @@ FROM
 INNER JOIN
     tem3 ON tem2.position = tem3.position_id
 GROUP BY
-    team_id, tem2.position;`,
+    team_id, tem2.position)
+SELECT
+    taller+heavier AS total,
+    team_id
+FROM tem4
+GROUP BY team_id
+    ;`,
     (err, data) => {
             if (err || data.length == 0) {
                 console.log(err);
