@@ -399,7 +399,7 @@ const comparison1 = function (req, res) {
   // Execute the insertion and handle the database response
   const user_current_game_id = req.params.user_current_game_id;
   connection.query(`
-ITH tem1 AS (
+WITH tem1 AS (
     SELECT
         person1type AS position,
         COUNT(person1type) AS hl_position
