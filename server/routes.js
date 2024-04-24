@@ -341,7 +341,7 @@ FROM
 INNER JOIN
     tem3 ON tem2.position = tem3.position_id
 GROUP BY
-    team_id, tem2.position;`,
+    team_id, tem2.position`,
     (err, data) => {
             if (err || data.length == 0) {
                 console.log(err);
@@ -399,10 +399,10 @@ const comparison1 = function (req, res) {
   // Execute the insertion and handle the database response
   const user_current_game_id = req.params.user_current_game_id;
   connection.query(`
-  WITH tem1 AS(
+ITH tem1 AS (
     SELECT
         person1type AS position,
-        COUNT(person1type) AS IMPORTANT
+        COUNT(person1type) AS hl_position
     FROM
         play_by_play_test
     GROUP BY
@@ -417,72 +417,87 @@ tem2 AS (
     FROM
         common_player_info
     WHERE
-    team_id IN (
-        SELECT
-            home_team_id
-        FROM
-            game_summary
-        WHERE
-            game_id = '${user_current_game_id}'
-        UNION
-        SELECT
-            visitor_team_id
-        FROM
-            game_summary
-        WHERE
-            game_id = '${user_current_game_id}'
-))
+        team_id IN (
+            SELECT
+                home_team_id
+            FROM
+                game_summary
+            WHERE
+                game_id = '22100541'
+            UNION
+            SELECT
+                visitor_team_id
+            FROM
+                game_summary
+            WHERE
+                game_id = '22100541'
+        )
+),
+tem3 AS (
+    SELECT
+        CASE
+            WHEN AVG(actual_height) >= (
+                SELECT
+                    MAX(average_height)
+                FROM
+                    (
+                        SELECT
+                            AVG(actual_height) AS average_height, tem1.position
+                        FROM
+                            tem1
+                        INNER JOIN
+                            tem2 ON tem1.position = tem2.position_id
+                        GROUP BY
+                            tem1.position
+                    ) AS max_height
+                WHERE
+                    tem1.position = max_height.position 
+                GROUP BY
+                    max_height.position
+            ) THEN 1
+            ELSE 0
+        END AS taller,
+        CASE
+            WHEN AVG(weight) >= (
+                SELECT
+                    MAX(average_weight)
+                FROM
+                    (
+                        SELECT
+                            AVG(weight) AS average_weight, tem1.position
+                        FROM
+                            tem1
+                        INNER JOIN
+                            tem2 ON tem1.position = tem2.position_id
+                        GROUP BY
+                            tem1.position
+                    ) AS max_weight
+                WHERE
+                    tem1.position = max_weight.position 
+                GROUP BY
+                    max_weight.position
+            ) THEN 1
+            ELSE 0
+        END AS heavier,
+        AVG(actual_height) AS average_height,
+        AVG(weight) AS average_weight,
+        team_id,
+        tem1.position
+    FROM
+        tem1
+    INNER JOIN
+        tem2 ON tem1.position = tem2.position_id
+    GROUP BY
+        team_id, tem1.position
+)
+
 SELECT
-    CASE
-        WHEN AVG(actual_height) >= (
-            SELECT
-                MAX(average_height)
-            FROM
-                (
-                    SELECT
-                        AVG(actual_height) as average_height, tem1.position
-                    FROM
-                        tem1
-                    INNER JOIN
-                        tem2 ON tem1.position = tem2.position_id
-                    GROUP BY
-                        tem1.position
-                ) AS max_height
-            GROUP BY
-                max_height.position
-        ) THEN 1
-        ELSE 0
-    END AS taller,
-    CASE
-        WHEN AVG(weight) >= (
-            SELECT
-                MAX(average_weight)
-            FROM
-                (
-                    SELECT
-                        AVG(weight) as average_weight, tem1.position
-                    FROM
-                        tem1
-                    INNER JOIN
-                        tem2 ON tem1.position = tem2.position_id
-                    GROUP BY
-                        tem1.position
-                ) AS max_weight
-            GROUP BY
-                max_weight.position
-        ) THEN 1
-        ELSE 0
-    END AS heavier,
-    AVG(actual_height) AS average_height,
-    AVG(weight) AS average_weight,
-    team_id,
-    tem1.position
+    taller + heavier AS total,
+    team_id
 FROM
-    tem1
-INNER JOIN
-    tem2 ON tem1.position = tem2.position_id
+    tem3
 GROUP BY
-    team_id, tem1.position
+    team_id
   `, (err, data) => {
     if (err || data.length === 0) {
       console.log(err);
