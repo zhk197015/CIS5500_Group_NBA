@@ -95,42 +95,42 @@ const getActivePlayers = function (req, res) {
   });
 };
 
-// Route 4: GET /trade_page_search
-// Return a player based on fuzzy search on height, weight, age, position, and team
-const tradePageSearch = function (req, res) {
-  // Extract search parameters from query string
-  // Construct SQL query to perform a fuzzy search on player attributes
-  // Execute the query and return the matching player's details
-  const weightLow = req.query.weight_low ?? 164;
-  const weightHigh = req.query.weight_high ?? 290;
-  const ageLow = req.query.age_low ?? 21;
-  const ageHigh = req.query.age_high ?? 44;
-  const heightLow = req.query.age_low ?? 30.48;
-  const heightHigh = req.query.age_high ?? 231.14;
-};
-connection.query(`
-WITH msy_height AS (select person_id,first_name,last_name, (CAST(SUBSTRING_INDEX(actual_height, "'", 1) AS UNSIGNED) * 30.48) +
-(CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(actual_height, "'", -1), '"', 1) AS UNSIGNED) * 2.54) AS height_cm
-FROM common_player_info)
-SELECT *
-FROM common_player_info, msy_height
-WHERE common_player_info.person_id= msy_height.person_id
-AND common_player_info.team_name LIKE '%${team_name}%'
-  AND common_player_info.position LIKE '%${position}%'
-  AND msy_height.height_cm >= ${heightLow}
-  AND msy_height.height_cm <= ${heightHigh}
-  AND common_player_info.weight >= ${weightLow}
-  AND common_player_info.weight <= ${weightHigh}
-  AND common_player_info.age >= ${ageLow} AND common_player_info.age <= ${ageHigh}
-ORDER BY team_name ASC;
-  `, (err, data) => {
-    if (err || data.length === 0) {
-      console.log(err);
-      res.json([]);
-    } else {
-      res.json(data);
-    }
-  });
+// // Route 4: GET /trade_page_search
+// // Return a player based on fuzzy search on height, weight, age, position, and team
+// const tradePageSearch = function (req, res) {
+//   // Extract search parameters from query string
+//   // Construct SQL query to perform a fuzzy search on player attributes
+//   // Execute the query and return the matching player's details
+//   const weightLow = req.query.weight_low ?? 164;
+//   const weightHigh = req.query.weight_high ?? 290;
+//   const ageLow = req.query.age_low ?? 21;
+//   const ageHigh = req.query.age_high ?? 44;
+//   const heightLow = req.query.age_low ?? 30.48;
+//   const heightHigh = req.query.age_high ?? 231.14;
+// };
+// connection.query(`
+// WITH msy_height AS (select person_id,first_name,last_name, (CAST(SUBSTRING_INDEX(actual_height, "'", 1) AS UNSIGNED) * 30.48) +
+// (CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(actual_height, "'", -1), '"', 1) AS UNSIGNED) * 2.54) AS height_cm
+// FROM common_player_info)
+// SELECT *
+// FROM common_player_info, msy_height
+// WHERE common_player_info.person_id= msy_height.person_id
+// AND common_player_info.team_name LIKE '%${team_name}%'
+//   AND common_player_info.position LIKE '%${position}%'
+//   AND msy_height.height_cm >= ${heightLow}
+//   AND msy_height.height_cm <= ${heightHigh}
+//   AND common_player_info.weight >= ${weightLow}
+//   AND common_player_info.weight <= ${weightHigh}
+//   AND common_player_info.age >= ${ageLow} AND common_player_info.age <= ${ageHigh}
+// ORDER BY team_name ASC;
+//   `, (err, data) => {
+//     if (err || data.length === 0) {
+//       console.log(err);
+//       res.json([]);
+//     } else {
+//       res.json(data);
+//     }
+//   });
 // Route 5: GET /trade_page_trading_card/:person_id
 // Get all players in the team given a person_id
 const tradePageTradingCard = function (req, res) {
@@ -290,8 +290,7 @@ const comparison = function (req, res) {
                         game_summary
                     WHERE
                         game_id = '${user_current_game_id}'
-)),
-tem4 AS (
+))
         SELECT
     CASE
         WHEN AVG(actual_height) >= (
@@ -342,13 +341,7 @@ FROM
 INNER JOIN
     tem3 ON tem2.position = tem3.position_id
 GROUP BY
-    team_id, tem2.position)
-SELECT
-    taller+heavier AS total,
-    team_id
-FROM tem4
-GROUP BY team_id
-    ;`,
+    team_id, tem2.position;`,
     (err, data) => {
             if (err || data.length == 0) {
                 console.log(err);
@@ -397,7 +390,6 @@ const gameResult = function (req, res) {
     }
   });
 };
-
 
 // Route 12: GET /comparison1/:game_id
 // Filter out the previous season and find the most important position(EX:Small ball era: postion 1 and 2 is important)
@@ -502,16 +494,16 @@ GROUP BY
 };
 
 module.exports = {
-  teamInfo,
-  getTeams,
-  getActivePlayers,
-  tradePageSearch,
-  tradePageTradingCard,
-  playerName,
-  updatePlayerTeam,
-  teamGames,
-  comparison,
-  updateResult,
-  gameResult,
-  comparison1
-};
+    teamInfo,
+    getTeams,
+    getActivePlayers,
+    // tradePageSearch,
+    tradePageTradingCard,
+    playerName,
+    updatePlayerTeam,
+    teamGames,
+    comparison,
+    updateResult,
+    gameResult,
+    comparison1
+  };
