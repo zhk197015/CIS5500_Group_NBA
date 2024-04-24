@@ -423,14 +423,14 @@ tem2 AS (
             FROM
                 game_summary
             WHERE
-                game_id = '22100541'
+                game_id = '${user_current_game_id}'
             UNION
             SELECT
                 visitor_team_id
             FROM
                 game_summary
             WHERE
-                game_id = '22100541'
+                game_id = '${user_current_game_id}'
         )
 ),
 tem3 AS (
