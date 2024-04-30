@@ -1,9 +1,0 @@
-{
-  "rds_host": "final-project.cxrauybc68il.us-east-1.rds.amazonaws.com",
-  "rds_port": "3306",
-  "rds_user": "admin",
-  "rds_password": "cis5500nba",
-  "rds_db": "nba",
-  "server_host": "localhost",
-  "server_port": "8080"
-}
