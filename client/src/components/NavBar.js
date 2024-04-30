@@ -33,7 +33,7 @@ function NavText({ href, text, isMain }) {
 // to make the component look nice. Feel free to try changing the formatting
 // props to how it changes the look of the component.
 export default function NavBar() {
-    const logoUrl = "https://pngimg.com/uploads/nba/nba_PNG22.png"; // Replace with your actual logo URL
+    const logoUrl = "https://pngimg.com/uploads/nba/nba_PNG22.png"; 
   return (
       <AppBar position='static' color='secondary' style={{ "background-image": "linear-gradient(to right, #00395d, #e57373)" }}>
       <Container maxWidth='xl'>
