@@ -29,6 +29,9 @@ const SimulationPage = () => {
   const [currentTeam, setCurrentTeam] = useState(null);
   const [teamGames, setTeamGames] = useImmer([]);
 
+  const winCount = teamGames.filter((item) => item.isWin === true).length;
+  const loseCount = teamGames.filter((item) => item.isWin === false).length;
+
   useEffect(() => {
     const fetchTeamGames = async () => {
       setTeamGames([]);
@@ -78,12 +81,21 @@ const SimulationPage = () => {
         .reduce((acc, cur) => {
           return acc + cur.total;
         }, 0);
+
+      const currentTeamId = currentTeam.id;
+      const currentTeamIsWin =
+        homeTeamScore > visitorTeamScore
+          ? homeTeamId === currentTeamId
+          : visitorTeamId === currentTeamId;
+
       setTeamGames((draft) => {
         const img =
           homeTeamScore > visitorTeamScore
             ? game.home_team_name
             : game.visitor_team_name;
-        draft.find((item) => item.game_id === game.game_id).result = `<img
+        const targetGame = draft.find((item) => item.game_id === game.game_id);
+        targetGame.isWin = currentTeamIsWin;
+        targetGame.result = `<img
         alt="${img} logo"
         style="width:50px;"
         src="/logos/${encodeURIComponent(img)}.png"
@@ -111,6 +123,25 @@ const SimulationPage = () => {
           &nbsp;&nbsp;back
         </span>
         {loadingGame && <Typography>Loading games...</Typography>}
+        <Typography>
+          <div
+            style={{
+              display: "flex",
+              fontWeight: "bold",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <img
+              style={{ width: 50 }}
+              alt={`${currentTeam.name} logo`}
+              src={`/logos/${encodeURIComponent(currentTeam.name)}.png`}
+            />
+            <span style={{ marginLeft: 10 }}>
+              {winCount} Win {loseCount} Lose
+            </span>
+          </div>
+        </Typography>
       </h1>
       <table style={{ margin: "0 auto", width: "50%" }}>
         <thead>
