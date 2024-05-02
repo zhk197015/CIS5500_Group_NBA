@@ -84,22 +84,23 @@ const getTeams = function (req, res) {
 // Route 3: GET /players/active
 // Retrieves a list of active players with their common information.
 const getActivePlayers = function (req, res) {
-  const teamId = req.params.teamId;
-  let sql = `
-  SELECT cpi.person_id,cpi.team_id,cpi.age, cpi.school, cpi.country, p.first_name, p.last_name, 
-         cpi.actual_height, cpi.weight, cpi.actual_position, 
-         cpi.draft_round, cpi.draft_number
-  FROM common_player_info cpi JOIN player p ON cpi.person_id = p.id
-  WHERE cpi.rosterstatus = 'Active' and cpi.team_id= ?
-`;
-  connection.query(sql, [teamId], (err, data) => {
-    if (err || data.length === 0) {
-      console.log("Error fetching active players:", err);
-      res.json({});
-    } else {
-      res.json(data);
+  connection.query(
+    `
+    SELECT cpi.age, cpi.school, cpi.country, p.first_name, p.last_name, 
+           cpi.actual_height, cpi.weight, cpi.actual_position, 
+           cpi.draft_round, cpi.draft_number
+    FROM common_player_info cpi JOIN player p ON cpi.person_id = p.id
+    WHERE cpi.rosterstatus = 'Active'
+  `,
+    (err, data) => {
+      if (err || data.length === 0) {
+        console.log("Error fetching active players:", err);
+        res.json({});
+      } else {
+        res.json(data);
+      }
     }
-  });
+  );
 };
 
 // // Route 4: GET /trade_page_search
@@ -147,15 +148,25 @@ const tradePageTradingCard = function (req, res) {
 
   connection.query(
     `
-  WITH team_player as(SELECT team.full_name AS team_name, team.abbreviation,
-    concat(common_player_info.first_name,' ', common_player_info.last_name) AS player_name
-FROM team,common_player_info
-WHERE team.abbreviation=common_player_info.team_abbreviation
-order by team.full_name)
-SELECT team_player.team_name,team_player.player_name
-FROM team_player, common_player_info
-WHERE team_player.abbreviation = common_player_info.team_abbreviation
-AND person_id = ?
+SELECT
+    game_summary.game_id,
+    game_summary.home_team_id,
+    home_team.full_name AS home_team_name,
+    game_summary.visitor_team_id,
+    visitor_team.full_name AS visitor_team_name
+FROM
+    game_info
+    INNER JOIN
+    game_summary ON game_info.game_id = game_summary.game_id
+    INNER JOIN
+    team  AS home_team ON game_summary.home_team_id = home_team.id
+    INNER JOIN
+    team AS visitor_team  ON game_summary.visitor_team_id = visitor_team.id
+    WHERE
+    game_summary.home_team_id = '1610612760'
+    OR
+    game_summary.visitor_team_id = '1610612756';
+
   `,
     [person_id],
     (err, data) => {
@@ -185,7 +196,7 @@ const playerName = function (req, res) {
 From common_player_info, player
 WHERE common_player_info.person_id = player.id
 AND rosterstatus = 'Active'
-AND id = ?
+AND id = '${person_id}'
   `,
     [person_id],
     (err, data) => {
@@ -268,109 +279,42 @@ const comparison = function (req, res) {
   // Execute the query and return player heights and weights for those positions
   const user_current_game_id = req.params.game_id;
   connection.query(
-    `
-        WITH tem1 AS (
-SELECT
-    *
-FROM
-    play_by_play_test
-WHERE
-    game_id='${user_current_game_id}'
+    `WITH RelevantTeams AS (
+    SELECT home_team_id AS team_id
+    FROM game_summary
+    WHERE game_id = '${user_current_game_id}'
+    UNION
+    SELECT visitor_team_id
+    FROM game_summary
+    WHERE game_id = '${user_current_game_id}'
 ),
-tem2 AS(
-SELECT
-    person1type AS position,
-    COUNT(person1type) AS hl_position
-FROM
-    tem1
-GROUP BY
-    person1type
-ORDER BY
-    COUNT(person1type) DESC
-LIMIT 3
+TopPositions AS (
+    SELECT person1type AS position
+    FROM play_by_play_test
+    WHERE game_id = '${user_current_game_id}'
+    GROUP BY person1type
+    ORDER BY COUNT(*) DESC
+    LIMIT 3
 ),
-tem3 AS (
-SELECT
-    *
-FROM
-    common_player_info
-WHERE
-    team_id IN (
-        SELECT
-            home_team_id
-        FROM
-            game_summary
-        WHERE
-            game_id = '${user_current_game_id}'
-        UNION
-        SELECT
-            visitor_team_id
-        FROM
-            game_summary
-        WHERE
-            game_id = '${user_current_game_id}'
-)),
-tem4 AS(
-SELECT
-    CASE
-        WHEN AVG(actual_height) >= (
-            SELECT
-                MAX(average_height)
-            FROM
-                (
-                    SELECT
-                        AVG(actual_height) as average_height, tem2.position
-                    FROM
-                        tem2
-                    INNER JOIN
-                        tem3 ON tem2.position = tem3.position_id
-                    GROUP BY
-                        tem2.position
-                ) AS max_height
-            WHERE tem2.position=max_height.position
-            GROUP BY
-                max_height.position
-        ) THEN 1
-        ELSE 0
-    END AS taller,
-    CASE
-        WHEN AVG(weight) >= (
-            SELECT
-                MAX(average_weight)
-            FROM
-                (
-                    SELECT
-                        AVG(weight) as average_weight, tem2.position
-                    FROM
-                        tem2
-                    INNER JOIN
-                        tem3 ON tem2.position = tem3.position_id
-                    GROUP BY
-                        tem2.position
-                ) AS max_weight
-            WHERE tem2.position=max_weight.position
-            GROUP BY
-                max_weight.position
-        ) THEN 1
-        ELSE 0
-    END AS heavier,
-    AVG(actual_height) AS average_height,
-    AVG(weight) AS average_weight,
-    team_id,
-    tem2.position
-FROM
-    tem2
-INNER JOIN
-    tem3 ON tem2.position = tem3.position_id
-GROUP BY
-    team_id, tem2.position)
-SELECT
-    taller+heavier AS total,
-    team_id
-FROM tem4
-GROUP BY team_id
-ORDER BY
-    team_id desc`,
+PlayerStats AS (
+    SELECT p.team_id, p.position_id, AVG(p.actual_height) AS avg_height, AVG(p.weight) AS avg_weight
+    FROM common_player_info p
+    WHERE p.team_id IN (SELECT team_id FROM RelevantTeams)
+    AND p.position_id IN (SELECT position FROM TopPositions)
+    GROUP BY p.team_id, p.position_id
+),
+MaxStats AS (
+    SELECT position_id, MAX(avg_height) AS max_height, MAX(avg_weight) AS max_weight
+    FROM PlayerStats
+    GROUP BY position_id
+)
+SELECT p.team_id,
+       (CASE WHEN p.avg_height >= m.max_height THEN 1 ELSE 0 END +
+        CASE WHEN p.avg_weight >= m.max_weight THEN 1 ELSE 0 END) AS total
+FROM PlayerStats p
+JOIN MaxStats m ON p.position_id = m.position_id
+GROUP BY p.team_id
+ORDER BY p.team_id DESC;`,
     (err, data) => {
       if (err || data.length == 0) {
         console.log(err);
@@ -435,107 +379,41 @@ const comparison1 = function (req, res) {
   const user_current_game_id = req.params.game_id;
   connection.query(
     `
-WITH tem1 AS (
-    SELECT
-        person1type AS position,
-        COUNT(person1type) AS hl_position
-    FROM
-        play_by_play_test
-    GROUP BY
-        person1type
-    ORDER BY
-        COUNT(person1type)
+WITH RelevantTeams AS (
+    SELECT home_team_id AS team_id
+    FROM game_summary
+    WHERE game_id = '${user_current_game_id}'
+    UNION
+    SELECT visitor_team_id
+    FROM game_summary
+    WHERE game_id = '${user_current_game_id}'
+),
+PlayerPositions AS (
+    SELECT person1type AS position, COUNT(*) AS hl_position
+    FROM play_by_play_test
+    GROUP BY person1type
+    ORDER BY hl_position DESC
     LIMIT 2
 ),
-tem2 AS (
-    SELECT
-        *
-    FROM
-        common_player_info
-    WHERE
-        team_id IN (
-            SELECT
-                home_team_id
-            FROM
-                game_summary
-            WHERE
-                game_id = '${user_current_game_id}'
-            UNION
-            SELECT
-                visitor_team_id
-            FROM
-                game_summary
-            WHERE
-                game_id = '${user_current_game_id}'
-        )
+PlayerInfo AS (
+    SELECT p.position_id , p.team_id, AVG(p.actual_height) AS avg_height, AVG(p.weight) AS avg_weight
+    FROM common_player_info p
+    JOIN RelevantTeams t ON p.team_id = t.team_id
+    WHERE p.position_id IN (SELECT position FROM PlayerPositions)
+    GROUP BY team_id, p.position_id, team_id
 ),
-tem3 AS (
-    SELECT
-        CASE
-            WHEN AVG(actual_height) >= (
-                SELECT
-                    MAX(average_height)
-                FROM
-                    (
-                        SELECT
-                            AVG(actual_height) AS average_height, tem1.position
-                        FROM
-                            tem1
-                        INNER JOIN
-                            tem2 ON tem1.position = tem2.position_id
-                        GROUP BY
-                            tem1.position
-                    ) AS max_height
-                WHERE
-                    tem1.position = max_height.position 
-                GROUP BY
-                    max_height.position
-            ) THEN 1
-            ELSE 0
-        END AS taller,
-        CASE
-            WHEN AVG(weight) >= (
-                SELECT
-                    MAX(average_weight)
-                FROM
-                    (
-                        SELECT
-                            AVG(weight) AS average_weight, tem1.position
-                        FROM
-                            tem1
-                        INNER JOIN
-                            tem2 ON tem1.position = tem2.position_id
-                        GROUP BY
-                            tem1.position
-                    ) AS max_weight
-                WHERE
-                    tem1.position = max_weight.position 
-                GROUP BY
-                    max_weight.position
-            ) THEN 1
-            ELSE 0
-        END AS heavier,
-        AVG(actual_height) AS average_height,
-        AVG(weight) AS average_weight,
-        team_id,
-        tem1.position
-    FROM
-        tem1
-    INNER JOIN
-        tem2 ON tem1.position = tem2.position_id
-    GROUP BY
-        team_id, tem1.position
-)
-
+    MaxStats AS (
+    SELECT  position_id, MAX(avg_height) AS max_height, MAX(avg_weight) AS max_weight
+    FROM PlayerInfo
+    GROUP BY  position_id)
 SELECT
-    taller + heavier AS total,
-    team_id
-FROM
-    tem3
-GROUP BY
-    team_id
-ORDER BY
-    team_id desc
+       (CASE WHEN p.avg_height >= m.max_height THEN 1 ELSE 0 END +
+        CASE WHEN p.avg_weight >= m.max_weight THEN 1 ELSE 0 END) AS total,
+        p.team_id
+FROM PlayerInfo p
+JOIN MaxStats m ON p.position_id = m.position_id
+group by team_id
+ORDER BY p.team_id DESC;
   `,
     (err, data) => {
       if (err || data.length === 0) {
