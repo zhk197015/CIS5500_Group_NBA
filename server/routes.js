@@ -161,7 +161,7 @@ const tradePageSearch = function (req, res) {
     }
   });
 };
-// Route 4.5: GET /team_player
+// Route 5: GET /team_player
 // Get all players in the team given a person_id
 const get_team_players = function (req, res) {
   //  team_id
@@ -197,47 +197,6 @@ const get_team_players = function (req, res) {
       res.json(data);
     }
   });
-};
-
-// Route 5: GET /trade_page_trading_card/:person_id
-// Get all players in the team given a person_id
-const tradePageTradingCard = function (req, res) {
-  // Construct SQL query to retrieve all players from the same team as the given person_id
-  // Execute the query and return all players' details
-  const person_id = req.params.your_given_person_id;
-
-  connection.query(
-    `
-WITH team_player as(
-SELECT
-    team.full_name AS team_name,
-    team.id,
-    concat(common_player_info.first_name,' ', common_player_info.last_name) AS player_name
-FROM
-    team JOIN common_player_info
-    ON
-    team.id=common_player_info.team_id
-)
-SELECT
-    DISTINCT team_player.team_name,
-    team_player.player_name
-FROM team_player JOIN common_player_info
-    ON
-    team_player.id = common_player_info.team_id
-WHERE
-    person_id = ?
-
-  `,
-    [person_id],
-    (err, data) => {
-      if (err || data.length === 0) {
-        console.log(err);
-        res.json({});
-      } else {
-        res.json(data);
-      }
-    }
-  );
 };
 
 // Route 6: GET /player_name/:name
@@ -491,7 +450,6 @@ module.exports = {
   getTeams,
   getActivePlayers,
   tradePageSearch,
-  tradePageTradingCard,
   playerName,
   updatePlayerTeam,
   teamGames,
