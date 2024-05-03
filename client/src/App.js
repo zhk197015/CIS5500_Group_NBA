@@ -42,7 +42,7 @@ export default function App() {
         <Routes>
           <Route path="/" element={<HomePage />} />
             {/*<Route path="/albums" element={<AlbumsPage />} />*/}
-            <Route path="/albums" element={<TradePage />} />
+            <Route path="/trade" element={<TradePage />} />
           <Route path="/albums/:album_id" element={<AlbumInfoPage />} />
           <Route path="/simulation" element={<SimulationPage />} />
           {/*<Route path="/trade" element={<TradePage />} />*/}
