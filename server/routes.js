@@ -208,24 +208,24 @@ const tradePageTradingCard = function (req, res) {
 
   connection.query(
     `
+WITH team_player as(
 SELECT
-    game_summary.game_id,
-    game_summary.home_team_id,
-    home_team.full_name AS home_team_name,
-    game_summary.visitor_team_id,
-    visitor_team.full_name AS visitor_team_name
+    team.full_name AS team_name,
+    team.id,
+    concat(common_player_info.first_name,' ', common_player_info.last_name) AS player_name
 FROM
-    game_info
-    INNER JOIN
-    game_summary ON game_info.game_id = game_summary.game_id
-    INNER JOIN
-    team  AS home_team ON game_summary.home_team_id = home_team.id
-    INNER JOIN
-    team AS visitor_team  ON game_summary.visitor_team_id = visitor_team.id
-    WHERE
-    game_summary.home_team_id = '1610612760'
-    OR
-    game_summary.visitor_team_id = '1610612756';
+    team JOIN common_player_info
+    ON
+    team.id=common_player_info.team_id
+)
+SELECT
+    DISTINCT team_player.team_name,
+    team_player.player_name
+FROM team_player JOIN common_player_info
+    ON
+    team_player.id = common_player_info.team_id
+WHERE
+    person_id = ?
 
   `,
     [person_id],
