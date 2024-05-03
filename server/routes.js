@@ -102,6 +102,24 @@ const getActivePlayers = function (req, res) {
   });
 };
 
+// Route 3.5: GET /teamlists
+// Retrieves a list of all the teams in the league.
+const Teamlist = function (req, res) {
+  connection.query(
+      `
+    select full_name, id
+    From team;
+  `,
+      (err, data) => {
+        if (err || data.length === 0) {
+          console.log("Error fetching teams:", err);
+          res.json({});
+        } else {
+          res.json(data);
+        }
+      }
+  );
+};
 
 // // Route 4: GET /trade_page_search
 // // Return a player based on fuzzy search on height, weight, age, position, and team
