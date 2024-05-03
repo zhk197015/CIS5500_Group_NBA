@@ -169,7 +169,7 @@ import axios from "axios";
                   SetSearchForm({...searchForm, weight_low:e.target.value})
                 }}
                 InputProps={{
-                  endAdornment: <InputAdornment position="end"> &nbsp; &nbsp; </InputAdornment>,
+                  endAdornment: <InputAdornment position="end">lbs &nbsp; &nbsp; </InputAdornment>,
                 }}
                 variant="standard"
             />
@@ -181,7 +181,7 @@ import axios from "axios";
                   SetSearchForm({...searchForm, weight_high:e.target.value})
                 }}
                 InputProps={{
-                  endAdornment: <InputAdornment position="end">&nbsp;&nbsp;</InputAdornment>,
+                  endAdornment: <InputAdornment position="end">lbs &nbsp;&nbsp;</InputAdornment>,
                 }}
                 variant="standard"
             />
