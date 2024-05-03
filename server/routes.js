@@ -145,6 +145,7 @@ const tradePageSearch = function (req, res) {
       AND common_player_info.weight <= ?
       AND common_player_info.age >= ?
       AND common_player_info.age <= ?
+      AND common_player_info.rosterstatus = 'Active'
     ORDER BY team_name ASC;
   `;
 
