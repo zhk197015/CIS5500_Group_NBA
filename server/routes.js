@@ -101,7 +101,6 @@ const getActivePlayers = function (req, res) {
     }
   });
 };
-
 // Route 3.5: GET /teamlists
 // Retrieves a list of all the teams in the league.
 const Teamlist = function (req, res) {
@@ -121,42 +120,85 @@ const Teamlist = function (req, res) {
   );
 };
 
-// // Route 4: GET /trade_page_search
-// // Return a player based on fuzzy search on height, weight, age, position, and team
-// const tradePageSearch = function (req, res) {
-//   // Extract search parameters from query string
-//   // Construct SQL query to perform a fuzzy search on player attributes
-//   // Execute the query and return the matching player's details
-//   const weightLow = req.query.weight_low ?? 164;
-//   const weightHigh = req.query.weight_high ?? 290;
-//   const ageLow = req.query.age_low ?? 21;
-//   const ageHigh = req.query.age_high ?? 44;
-//   const heightLow = req.query.age_low ?? 30.48;
-//   const heightHigh = req.query.age_high ?? 231.14;
-// };
-// connection.query(`
-// WITH msy_height AS (select person_id,first_name,last_name, (CAST(SUBSTRING_INDEX(actual_height, "'", 1) AS UNSIGNED) * 30.48) +
-// (CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(actual_height, "'", -1), '"', 1) AS UNSIGNED) * 2.54) AS height_cm
-// FROM common_player_info)
-// SELECT *
-// FROM common_player_info, msy_height
-// WHERE common_player_info.person_id= msy_height.person_id
-// AND common_player_info.team_name LIKE '%${team_name}%'
-//   AND common_player_info.position LIKE '%${position}%'
-//   AND msy_height.height_cm >= ${heightLow}
-//   AND msy_height.height_cm <= ${heightHigh}
-//   AND common_player_info.weight >= ${weightLow}
-//   AND common_player_info.weight <= ${weightHigh}
-//   AND common_player_info.age >= ${ageLow} AND common_player_info.age <= ${ageHigh}
-// ORDER BY team_name ASC;
-//   `, (err, data) => {
-//     if (err || data.length === 0) {
-//       console.log(err);
-//       res.json([]);
-//     } else {
-//       res.json(data);
-//     }
-//   });
+// Route 4: GET /trade_page_search
+// Return a player based on fuzzy search on height, weight, age, position, and team
+const tradePageSearch = function (req, res) {
+  const weightLow = req.query.weight_low ?? 164;
+  const weightHigh = req.query.weight_high ?? 290;
+  const ageLow = req.query.age_low ?? 21;
+  const ageHigh = req.query.age_high ?? 44;
+  const heightLow = req.query.height_low ?? 30;
+  const heightHigh = req.query.height_high ?? 232;
+
+  const query = `
+    WITH msy_height AS (
+      SELECT person_id, first_name, last_name,
+        (CAST(SUBSTRING_INDEX(actual_height, "'", 1) AS UNSIGNED) * 30.48) +
+        (CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(actual_height, "'", -1), '"', 1) AS UNSIGNED) * 2.54) AS height_cm
+      FROM common_player_info
+    )
+    SELECT *
+    FROM common_player_info JOIN msy_height ON common_player_info.person_id = msy_height.person_id
+    WHERE msy_height.height_cm >= ?
+      AND msy_height.height_cm <= ?
+      AND common_player_info.weight >= ?
+      AND common_player_info.weight <= ?
+      AND common_player_info.age >= ?
+      AND common_player_info.age <= ?
+    ORDER BY team_name ASC;
+  `;
+
+  connection.query(query, [heightLow, heightHigh, weightLow, weightHigh, ageLow, ageHigh], (err, data) => {
+    if (err) {
+      console.error("Database query error:", err);
+      res.status(500).json({ error: "Error querying the database" });
+      return;
+    }
+    if (data.length === 0) {
+      res.status(404).json({ message: "No players found matching the criteria" });
+    } else {
+      res.json(data);
+    }
+  });
+};
+// Route 4.5: GET /team_player
+// Get all players in the team given a person_id
+const get_team_players = function (req, res) {
+  //  team_id
+  const teamId = req.params.teamId ; 
+
+  const query = `
+    WITH team_player AS (
+      SELECT
+          team.full_name AS team_name,
+          team.abbreviation,
+          CONCAT(common_player_info.first_name, ' ', common_player_info.last_name) AS player_name
+      FROM team
+      JOIN common_player_info ON team.id=common_player_info.team_id
+      WHERE team_id = ?
+      AND common_player_info.rosterstatus = 'Active'
+      ORDER BY team.full_name
+    )
+    SELECT DISTINCT
+      team_player.team_name,
+      team_player.player_name
+    FROM team_player;
+  `;
+
+  connection.query(query, [teamId], (err, data) => {
+    if (err) {
+      console.error('Database query error:', err);
+      res.status(500).json({ error: "Error querying the database" });
+      return;
+    }
+    if (data.length === 0) {
+      res.status(404).json({ message: "No data found" });
+    } else {
+      res.json(data);
+    }
+  });
+};
+
 // Route 5: GET /trade_page_trading_card/:person_id
 // Get all players in the team given a person_id
 const tradePageTradingCard = function (req, res) {
@@ -448,7 +490,7 @@ module.exports = {
   teamInfo,
   getTeams,
   getActivePlayers,
-  // tradePageSearch,
+  tradePageSearch,
   tradePageTradingCard,
   playerName,
   updatePlayerTeam,
@@ -457,4 +499,6 @@ module.exports = {
   updateResult,
   gameResult,
   comparison1,
+  Teamlist,
+  get_team_players
 };
