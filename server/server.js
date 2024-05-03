@@ -30,7 +30,7 @@ app.use(express.json()); // Middleware to parse JSON bodies
 // API Endpoints
 app.get("/teams/:type", teamInfo); // Get team name or location by type
 app.get("/teams", getTeams); // Get list of all teams
-app.get("/players/active", getActivePlayers); // Get active players
+app.get("/players/active/:teamId", getActivePlayers); // Get active players
 // app.get('/trade_page_search', tradePageSearch); // Fuzzy search for players
 app.get("/player_name/:name", playerName); // Get player info by name
 app.put("/player/:id/team", updatePlayerTeam); // Update player's team
