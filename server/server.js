@@ -15,13 +15,15 @@ const {
   updateResult,
   gameResult,
   comparison1,
+  get_team_players,
+  Teamlist
 } = require("./routes");
 
 const app = express();
 app.use(
-  cors({
-    origin: "*",
-  })
+    cors({
+      origin: "*",
+    })
 );
 
 app.use(express.json()); // Middleware to parse JSON bodies
@@ -39,10 +41,13 @@ app.get("/comparison/:game_id", comparison); // Get comparison for game simulati
 app.post("/update_result", updateResult); // Add simulation result to database
 app.get("/game_result/:game_id", gameResult); // Get game result by game_id
 app.get("/comparison1/:game_id", comparison1); // Get position importance from previous season
+app.get('/team_players/:teamId', get_team_players);
+app.get('/trade_page_search', tradePageSearch);
+app.get('/teamlists', Teamlist);
 
 app.listen(config.server_port, () => {
   console.log(
-    `Server running at http://${config.server_host}:${config.server_port}/`
+      `Server running at http://${config.server_host}:${config.server_port}/`
   );
 });
 
