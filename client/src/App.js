@@ -43,7 +43,7 @@ export default function App() {
           <Route path="/" element={<HomePage />} />
           <Route path="/albums" element={<AlbumsPage />} />
           <Route path="/albums/:album_id" element={<AlbumInfoPage />} />
-          <Route path="/songs" element={<SimulationPage />} />
+          <Route path="/simulation" element={<SimulationPage />} />
         </Routes>
       </BrowserRouter>
     </ThemeProvider>
