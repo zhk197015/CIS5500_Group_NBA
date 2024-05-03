@@ -40,7 +40,7 @@ export default function NavBar() {
         <Toolbar disableGutters>
           <img src={logoUrl} alt="NBA Logo" style={{ marginRight: '20px', height: '30px', filter: 'invert(100%)' }} />
           <NavText href='/' text='FANTASY' isMain />
-          <NavText href='/trade' text='Trade' />
+          <NavText href='/albums' text='Trade' />
           <NavText href='/simulation' text='Simulate Games' />
         </Toolbar>
       </Container>
