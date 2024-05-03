@@ -7,7 +7,6 @@ const {
   getTeams,
   getActivePlayers,
   tradePageSearch,
-  tradePageTradingCard,
   playerName,
   updatePlayerTeam,
   teamGames,
