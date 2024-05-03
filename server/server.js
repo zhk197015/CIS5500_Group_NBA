@@ -33,7 +33,6 @@ app.get("/teams/:type", teamInfo); // Get team name or location by type
 app.get("/teams", getTeams); // Get list of all teams
 app.get("/players/active", getActivePlayers); // Get active players
 // app.get('/trade_page_search', tradePageSearch); // Fuzzy search for players
-app.get("/trade_page_trading_card/:person_id", tradePageTradingCard); // Get all players from same team as person_id
 app.get("/player_name/:name", playerName); // Get player info by name
 app.put("/player/:id/team", updatePlayerTeam); // Update player's team
 app.get("/team_games/:user_team_id", teamGames); // Get games for a team
