@@ -21,8 +21,11 @@ import {
 import { useImmer } from "use-immer";
 // import { formatDuration, formatReleaseDate } from "../helpers/formatter";
 
+// Importing the configuration settings from a JSON file.
 const config = require("../config.json");
 
+// State hooks for managing the simulation step, loading state, the current team, and games of the team.
+// Use useState hooks to maintain local state for navigation step, game loading status, selected team, and team games.
 const SimulationPage = () => {
   const [step, setStep] = useState(1);
   const [loadingGame, setLoadingGame] = useState(false);
@@ -32,12 +35,17 @@ const SimulationPage = () => {
   const winCount = teamGames.filter((item) => item.isWin === true).length;
   const loseCount = teamGames.filter((item) => item.isWin === false).length;
 
+
+  // Effect hook to fetch team games when the current team changes.
   useEffect(() => {
     const fetchTeamGames = async () => {
+      // Reset team games before fetching new ones to clear old data
       setTeamGames([]);
+      // Conditional check to ensure currentTeam is selected.
       if (currentTeam?.id) {
         try {
           setLoadingGame(true);
+          // Fetch games from the server using the team's ID from configuration.
           const response = await axios.get(
             `http://${config.server_host}:${config.server_port}/team_games/${currentTeam.id}`
           );
@@ -46,6 +54,7 @@ const SimulationPage = () => {
           setTeamGames([]);
           console.error("Error fetching team games:", error);
         } finally {
+          // Reset loading state after fetch completes or fails.
           setLoadingGame(false);
         }
       } else {
@@ -55,20 +64,27 @@ const SimulationPage = () => {
     fetchTeamGames();
   }, [currentTeam, setTeamGames]);
 
+
+  // Function to handle the simulation of a game.
   const handleSimulation = async (game) => {
     try {
+      // Set loading state for individual games by game ID.
       setTeamGames((draft) => {
         draft.find((item) => item.game_id === game.game_id).loading = true;
       });
+      // Fetch comparison data for the game from two different endpoints
+      //Get the data for the comparison logic
       const { data: data1 } = await axios.get(
         `http://${config.server_host}:${config.server_port}/comparison/${game.game_id}`
       );
       const { data: data2 } = await axios.get(
         `http://${config.server_host}:${config.server_port}/comparison1/${game.game_id}`
       );
+      // Combine data from both comparison route, ensuring arrays are merged correctly.
       const data = (Array.isArray(data1) ? data1 : []).concat(
         Array.isArray(data2) ? data2 : []
       );
+      // Calculate scores for home and visitor teams by aggregating 'total' fields.
       const homeTeamId = game.home_team_id;
       const homeTeamScore = data
         .filter((item) => item.team_id === homeTeamId)
@@ -87,7 +103,7 @@ const SimulationPage = () => {
         homeTeamScore > visitorTeamScore
           ? homeTeamId === currentTeamId
           : visitorTeamId === currentTeamId;
-
+      // Determine the winning team and update the game result with the team's logo.
       setTeamGames((draft) => {
         const img =
           homeTeamScore > visitorTeamScore
@@ -104,12 +120,14 @@ const SimulationPage = () => {
     } catch (error) {
       console.error("Error simulating game:", error);
     } finally {
+      // Reset loading state for individual games
       setTeamGames((draft) => {
         draft.find((item) => item.game_id === game.game_id).loading = false;
       });
     }
   };
 
+  // Rendering the UI based on the current step.
   return step === 1 ? (
     <AllTeams setStep={setStep} setCurrentTeam={setCurrentTeam} />
   ) : (
