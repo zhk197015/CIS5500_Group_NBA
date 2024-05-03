@@ -84,24 +84,24 @@ const getTeams = function (req, res) {
 // Route 3: GET /players/active
 // Retrieves a list of active players with their common information.
 const getActivePlayers = function (req, res) {
-  connection.query(
-    `
-    SELECT cpi.age, cpi.school, cpi.country, p.first_name, p.last_name, 
-           cpi.actual_height, cpi.weight, cpi.actual_position, 
-           cpi.draft_round, cpi.draft_number
-    FROM common_player_info cpi JOIN player p ON cpi.person_id = p.id
-    WHERE cpi.rosterstatus = 'Active'
-  `,
-    (err, data) => {
-      if (err || data.length === 0) {
-        console.log("Error fetching active players:", err);
-        res.json({});
-      } else {
-        res.json(data);
-      }
+  const teamId = req.params.teamId;
+  let sql = `
+  SELECT cpi.person_id,cpi.team_id,cpi.age, cpi.school, cpi.country, p.first_name, p.last_name, 
+         cpi.actual_height, cpi.weight, cpi.actual_position, 
+         cpi.draft_round, cpi.draft_number
+  FROM common_player_info cpi JOIN player p ON cpi.person_id = p.id
+  WHERE cpi.rosterstatus = 'Active' and cpi.team_id= ?
+`;
+  connection.query(sql, [teamId], (err, data) => {
+    if (err || data.length === 0) {
+      console.log("Error fetching active players:", err);
+      res.json({});
+    } else {
+      res.json(data);
     }
-  );
+  });
 };
+
 
 // // Route 4: GET /trade_page_search
 // // Return a player based on fuzzy search on height, weight, age, position, and team
