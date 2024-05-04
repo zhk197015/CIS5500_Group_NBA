@@ -178,7 +178,7 @@ import axios from "axios";
             />
             <>     </>
             <TextField
-                label="heighest weight"
+                label="highest weight"
                 id="standard-start-adornment"
                 onChange={(e)=>{
                   SetSearchForm({...searchForm, weight_high:e.target.value})
