@@ -31,3 +31,16 @@ This is a course project for CIS 550 Databases & Information System (Spring 2024
 │   ├── routes.js           # stores code for the API routes’ handler functions
 │   └── server.js           # stores code for the routed HTTP application
 ```
+
+## How to Run App Locally
+
+Make sure you have installed `git`, `node`, `npm` before starting.
+
+1. Download repo
+2. Install backend dependencies: `cd server && npm install`
+3. Start backend: `npm start`
+4. Back to root: `cd ..`
+5. Install frontend dependencies: `cd client && npm install && npm install @mui/lab && npm install axios && npm install use-immer`
+6. Start frontend: `npm start`
+
+The website should pop up on the designated port (localhost:3000) with backend running on another port (localhost: 8080)
