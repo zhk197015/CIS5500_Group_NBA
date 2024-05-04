@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from 'react';
-import { Container, Grid, Button,NativeSelect, TextField,InputAdornment,Stack,Card, DialogTitle,Modal,Dialog, Paper, Select, MenuItem, FormControlLabel,Radio,Box, List ,ListItemButton,ListItemText} from '@mui/material';
+import { Container, Grid, InputLabel,Button,NativeSelect, TextField,InputAdornment,Stack,Card,FormControl, DialogTitle,Modal,Dialog, Paper, Select, MenuItem, FormControlLabel,Radio,Box, List ,ListItemButton,ListItemText} from '@mui/material';
 import { styled } from '@mui/material/styles';
 
 import { DataGrid } from '@mui/x-data-grid';
@@ -9,6 +9,7 @@ import axios from "axios";
 
  function  TradePage() {
   useEffect( () => {
+      handleSubmit()
       fetch(`http://${config.server_host}:${config.server_port}/teamlists`)
           .then(res => res.json())
           .then(resJson => {
@@ -27,7 +28,7 @@ import axios from "axios";
     setSelectedPlayer(player);
     setModalOpen(true);
   };
-
+//Random on the trade
   const handleTrade = () => {
     const success = Math.random() < 0.5;
     alert(success ? 'Trade successful!' : 'Trade failed.');
@@ -44,7 +45,6 @@ import axios from "axios";
      const [ playerId, setPlayerId] = useState('')
   const [selectedIndex, setSelectedIndex] = React.useState(1);
   const handleSubmit = () =>{
-    console.log(searchForm,1,`http://${config.server_host}:${config.server_port}/trade_page_search`)
     let paramsArray = [];
     let url = `http://${config.server_host}:${config.server_port}/trade_page_search`
     Object.keys(searchForm).forEach(key => paramsArray.push(key + '=' + searchForm[key]))
@@ -63,6 +63,7 @@ import axios from "axios";
         });
 
   }
+  //Return a list of team players
   const handleTeamSearch = ()=>{
       fetch(`http://${config.server_host}:${config.server_port}/team_players/`+team)//1610612737
           .then(res => res.json())
@@ -73,13 +74,14 @@ import axios from "axios";
               }
           });
   }
+  //trade the player into the team list
   const handleTransaction = ()=>{
       console.log(playerId>=0)
       if (!playerId&&!team) return  alert('please select a player')
       if (!team) return  alert('please select team')
       if (Math.ceil(Math.random()*10)>5){
           setTimeout(()=>{
-              setPlayerList([...playerList, {...playerInfo,player_name:playerInfo.first_name + playerInfo.last_name}])
+              setPlayerList([...playerList, {...playerInfo,player_name:playerInfo.first_name + "  " + playerInfo.last_name}])
           },1000)
           alert('trade successful!')
       }else{
@@ -107,6 +109,7 @@ import axios from "axios";
   }));
   return (
     <Container >
+      <h2>Search Player</h2>  
       <Box   sx={{padding: '20px', marginBottom: '10px' }} >
         <Grid container  spacing={2}  flex={{justifyContent:"flex-end"}}>
           <Grid  item  xs={4}>
@@ -188,17 +191,18 @@ import axios from "axios";
           </Grid>
           <Grid item>
             <Button variant="contained"  onClick={handleSubmit}>Search</Button>
-            {/*<Button variant="contained" style={{marginLeft:'5px'}} onClick={handleEmpty}>清空</Button>*/}
           </Grid>
         </Grid>
       </Box>
       <Grid container spacing={2}>
         <Grid item xs={4}>
+        <FormControl sx={{ m: 1, minWidth: '60%' }} size="small">
+            <InputLabel id="demo-select-small-label">Please select a team</InputLabel>
             <Select
                 style={{minWidth: '60%'}}
-                labelId="demo-simple-select-label"
-                id="demo-simple-select"
-                label="team"
+                labelId="demo-select-small-label"
+                id="demo-select-small"
+                label="Please select a team"
                 onChange={(e)=>{
                     setTeam(e.target.value)
                 }}
@@ -209,7 +213,8 @@ import axios from "axios";
                 ))
                 }
             </Select>
-
+          </FormControl>
+          <Button style={{margin: '10px 0 0 10px'}} variant="contained" onClick={handleTeamSearch}>search</Button>
 
             {/*<TextField*/}
             {/*    label="team"*/}
@@ -219,7 +224,6 @@ import axios from "axios";
             {/*    }}*/}
             {/*    variant="standard"*/}
             {/*/>*/}
-            <Button style={{marginLeft: '10px'}} variant="contained" onClick={handleTeamSearch}>search</Button>
             <Box sx={{  bgcolor: 'background.paper' }} style={{maxHeight:'50vh', overflow:"auto" }}>
             <List component="nav" aria-label="secondary mailbox folder">
               {playerList.map((player) => (
@@ -268,10 +272,9 @@ import axios from "axios";
                 </List>
             </Box>
 
-            <Button style={{marginTop: '10px',display:'flex', justifyContent:'center'}} variant="contained" onClick={handleTransaction}>Trade</Button>
+            <Button style={{margin: '10px 20px 0 auto' ,display:'flex', }} variant="contained" onClick={handleTransaction}>Trade</Button>
 
         </Grid>
-
       </Grid>
         <Dialog onClose={()=> setOnShow(false)} open={onShow}>
             <DialogTitle>PlayerInformation</DialogTitle>
