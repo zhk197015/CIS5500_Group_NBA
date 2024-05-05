@@ -1,0 +1,251 @@
+---
+title: "R Notebook"
+output:
+  html_document:
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(readxl)
+library(dplyr)
+library(corrplot)
+library(ggplot2)
+library(ggcorrplot)
+library(Hmisc)
+library(gtsummary)
+library(scales)
+library(skimr)
+library(mice)
+library(lmtest)
+library(ResourceSelection)
+library(pscl)
+library(mediation)
+library(psych)
+library(ipw)
+library(sjPlot)
+library(sjmisc)
+library(sjlabelled)
+library(lavaan)
+library(tidyverse)
+library(survival)
+library(questionr)
+
+```
+
+# 1. game_summary cleaning
+```{r}
+# read csv file
+game_summary = read.csv("C:\\Users\\25141\\OneDrive\\Desktop\\csv\\game_summary.csv")
+
+game_summary
+
+```
+
+```{r}
+
+# read game_summary column name
+names(game_summary)
+
+# eliminate not required column
+game_summary_update = subset(game_summary, select = -c(gamecode, live_period, live_pc_time, 
+natl_tv_broadcaster_abbreviation, live_period_time_bcast, wh_status))
+
+# read the new column
+names(game_summary_update)
+
+# extract the correct season and date
+data = mutate(game_summary_update,
+              correct_season = case_when(
+                as.Date(game_date_est, "%m/%d/%Y") > as.Date("2021-12-31") & as.Date(game_date_est, "%m/%d/%Y") < as.Date("2023-01-01") ~ 1 
+              )
+)
+
+missing = data$correct_season ==  '0'
+
+game_summary_2022 = subset(data, subset = !missing)
+
+# extract the 2022 season game
+game_summary_2022 = subset(game_summary_2022, select = -c(correct_season, game_date_est))
+game_summary_2022
+# After cleaning, there is no null values in it
+sum(is.na(game_summary_2022))
+
+# read the total column of game_summary
+nrow(game_summary_2022)
+
+# export game_summary after cleaning, finished
+write.csv(game_summary_2022, "C:\\Users\\25141\\OneDrive\\Desktop\\clean_csv\\game_summary.csv", row.names = FALSE)
+
+```
+
+
+# team
+```{r}
+# read team csv
+team = read.csv("C:\\Users\\25141\\OneDrive\\Desktop\\csv\\team.csv")
+
+# no missing value, cleaning finished
+sum(is.na(team))
+
+# no need to extract, using the original one
+```
+# team_locations
+```{r}
+# read team_location csv
+
+team_locations = read.csv("C:\\Users\\25141\\OneDrive\\Desktop\\csv\\team_locations.csv")
+
+team_locations
+
+# no missing value, cleaning finished
+sum(is.na(team_locations))
+```
+
+# team_details
+```{r}
+# read team details csv
+
+team_details = read.csv("C:\\Users\\25141\\OneDrive\\Desktop\\csv\\team_details.csv")
+
+team_details
+
+# no missing value, cleaning finished
+sum(is.na(team_details))
+
+```
+#player
+```{r}
+# read player csv
+
+player = read.csv("C:\\Users\\25141\\OneDrive\\Desktop\\csv\\player.csv")
+
+player
+
+# no missing value, cleaning finished. 
+sum(is.na(player))
+
+```
+# game_info
+```{r}
+# read csv file
+game_info = read.csv("C:\\Users\\25141\\OneDrive\\Desktop\\csv\\game_info.csv")
+
+names(game_info)
+
+# drop redundant column
+game_info_update = subset(game_info, select = -c(attendance, game_time))
+
+# read new data
+game_info_update
+
+# find the correct season and date
+data = mutate(game_info_update, 
+              correct_date = case_when(
+              as.Date(game_date, "%m/%d/%Y") > as.Date("2021-12-31") & as.Date(game_date, "%m/%d/%Y") <  as.Date("2023-01-01") ~ 1)
+)
+
+data
+
+missing = data$correct_data ==  '0'
+
+game_info_2022 = subset(data, subset = !missing)
+
+# extract the 2022 season game
+game_info_2022 = subset(game_info_2022, select = -c(correct_date))
+game_info_2022
+# After cleaning, there is no null values in it
+sum(is.na(game_info_2022))
+
+# read the total column of game_summary
+nrow(game_info_2022)
+
+# export game_summary after cleaning, finished
+write.csv(game_info, "C:\\Users\\25141\\OneDrive\\Desktop\\clean_csv\\game_summary.csv", row.names = FALSE)
+
+```
+
+# common_player_info
+```{r}
+# read csv file
+common_player_info = read.csv("C:\\Users\\25141\\OneDrive\\Desktop\\csv\\common_player_info.csv")
+
+common_player_info
+
+#function to convert birthdate to age
+age <- function(birthday, age.day = today(), units = "years", floor = TRUE) {
+    calc.age = lubridate::interval(birthday, age.day) / lubridate::duration(num = 1, units = units)
+    if (floor) return(as.integer(floor(calc.age)))
+    return(calc.age)
+}
+
+# find unique position column
+unique(data$position)
+
+# add age, actual position, and position_id for the data
+data = mutate(common_player_info, 
+              age = age(as.Date(birthdate, "%m/%d/%Y")), # change the age
+              position_id = case_when(
+                position == "Forward-Guard"  ~ 2,
+                position == "Guard-Forward"  ~ 2,
+                position == "Forward" ~ 3,
+                position == "Center" ~ 5,
+                position == "Guard" ~ 1,
+                position == "Center-Forward"  ~ 4,
+                position == "Forward-Center"  ~ 4,
+                TRUE ~ 0),
+              actual_position = case_when(
+                position_id == '1' ~ 'Point Guard',
+                position_id == '2' ~ 'Shooting Guard',
+                position_id == '3' ~ 'Small Forward',
+                position_id == '4' ~ 'Power Forward',
+                position_id == '5' ~ 'Center',
+                TRUE ~ 'Missing'))
+# leave the null value in draft round and draft number to keep more player in the trade page
+
+# export game_summary after cleaning, finished
+write.csv(data, "C:\\Users\\25141\\OneDrive\\Desktop\\clean_csv\\common_player_info.csv", row.names = FALSE)
+
+```
+# play_by_play
+```{r}
+# read play_by_play dataset
+play_by_play = read.csv("C:\\Users\\25141\\OneDrive\\Desktop\\csv\\play_by_play.csv")
+
+play_by_play
+
+play_by_play = subset(play_by_play, select = c(eventnum,game_id, person1type))
+
+# extract the essential part in csv
+play_by_play
+
+# count the row of play_by_play
+nrow(play_by_play)
+
+#remove the missing data
+play_by_play = na.omit(play_by_play)
+
+# count the updated row
+nrow(play_by_play)
+
+#see if there is missing data
+
+sum(is.na(play_by_play))
+
+# export game_summary after cleaning, finished
+write.csv(play_by_play, "C:\\Users\\25141\\OneDrive\\Desktop\\clean_csv\\play_by_play.csv", row.names = FALSE)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
