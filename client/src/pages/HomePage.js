@@ -8,7 +8,6 @@ import {
   AccordionDetails,
   Button,
 } from "@mui/material";
-// import { NavLink } from "react-router-dom";
 import TeamCard from "../components/TeamCard";
 const config = require("../config.json");
 
@@ -17,6 +16,7 @@ export default function HomePage() {
   const [selectedTeamName, setSelectedTeamName] = useState(null);
   const [selectedTeamId, setSelectedTeamId] = useState(null);
 
+    // useEffect hook to fetch team names and locations from the server when the component mounts.
   useEffect(() => {
     Promise.all([
       fetch(
@@ -26,11 +26,14 @@ export default function HomePage() {
         `http://${config.server_host}:${config.server_port}/teams/location`
       ).then((res) => res.json()),
     ]).then(([names, locations]) => {
+        // Process the fetched data to group teams by their conference locations.
       const locationGroups = names.reduce((acc, team, index) => {
-        const location = locations[index].conferences;
+          const location = locations[index].conferences;
+          // Check if the location key exists in the accumulator.
         if (!acc[location]) {
           acc[location] = [];
-        }
+          }
+          // Append team details to the corresponding location in the accumulator.
         acc[location].push({
           id: team.id,
           name: team.full_name,
@@ -38,20 +41,23 @@ export default function HomePage() {
         });
         return acc;
       }, {});
-      setLocations(locationGroups);
+        setLocations(locationGroups); // Update the locations state with grouped team data.
     });
   }, []);
 
+    // Function to handle user interaction when a team card is clicked.
   const handleOpenTeamCard = (team) => {
-    console.log(team);
-    setSelectedTeamId(team.id);
-    setSelectedTeamName(team.name);
+      console.log(team);  // Log the team object to the console for debugging.
+      setSelectedTeamId(team.id);  // Set the selected team's ID.
+      setSelectedTeamName(team.name);  // Set the selected team's name.
   };
 
+    // Function to reset the selected team information, closing the team card display.
   const handleCloseTeamCard = () => {
     setSelectedTeamName(null);
   };
 
+    // Render the HomePage component.
   return (
     <Container>
       <Divider />

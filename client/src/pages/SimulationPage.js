@@ -233,9 +233,13 @@ const SimulationPage = () => {
 
 export default SimulationPage;
 
+// Define a functional component named AllTeams that receives setStep and setCurrentTeam as props.
 const AllTeams = ({ setStep, setCurrentTeam }) => {
+    // State hook for storing and managing the structure of team data based on their locations.
   const [locations, setLocations] = useState({});
 
+    // useEffect hook to fetch team data from the server when the component mounts.
+    // Fetch team names and locations concurrently using Promise.all to optimize loading time.
   useEffect(() => {
     Promise.all([
       fetch(
@@ -245,27 +249,32 @@ const AllTeams = ({ setStep, setCurrentTeam }) => {
         `http://${config.server_host}:${config.server_port}/teams/location`
       ).then((res) => res.json()),
     ]).then(([names, locations]) => {
-      const locationGroups = names.reduce((acc, team, index) => {
+        // Process the fetched data to group teams by their conference location.
+        const locationGroups = names.reduce((acc, team, index) => {
+            // Initialize the location key in the accumulator if it doesn't already exist
         const location = locations[index].conferences;
         if (!acc[location]) {
           acc[location] = [];
-        }
+            }
+            // Append the team data to the appropriate location in the accumulator.
         acc[location].push({
           id: team.id,
           name: team.full_name,
           logoPath: `/logos/${encodeURIComponent(team.full_name)}.png`,
         });
         return acc;
-      }, {});
+        }, {});
+        // Update the locations state with the structured team data.
       setLocations(locationGroups);
     });
   }, []);
-
+    // Function to handle user interaction with a team card, setting the current team and moving to the next step.
   const handleOpenTeamCard = (team) => {
     setCurrentTeam(team);
     setStep(2);
   };
 
+    // Render the UI components to display all teams grouped by their location.
   return (
     <Container>
       <Divider />

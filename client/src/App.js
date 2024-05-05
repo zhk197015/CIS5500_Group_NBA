@@ -39,8 +39,9 @@ export default function App() {
         <NavBar />
         <Routes>
           <Route path="/" element={<HomePage />} />
-            <Route path="/trade" element={<TradePage />} />
+          <Route path="/trade" element={<TradePage />} />
           <Route path="/simulation" element={<SimulationPage />} />
+          
         </Routes>
       </BrowserRouter>
     </ThemeProvider>

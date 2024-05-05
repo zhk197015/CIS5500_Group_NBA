@@ -12,10 +12,14 @@ import TableContainer from "@mui/material/TableContainer";
 import { Modal, Box, Typography, Button } from "@mui/material";
 const config = require("../config.json");
 
+// The TeamCard component is used to display detailed information about a team, including team data and members.
 export default function TeamCard({ teamId, teamName, handleClose }) {
-  const [teamData, setTeamData] = useState(null);
-  const [teamMembers, setTeamMembers] = useState([]);
+    // State for storing detailed data about the team.
+    const [teamData, setTeamData] = useState(null);
+    // State for storing a list of team members.
+    const [teamMembers, setTeamMembers] = useState([]);
 
+    // useEffect to fetch team data and team members when component mounts or when teamName or teamId changes.
   useEffect(() => {
     fetch(`http://${config.server_host}:${config.server_port}/teams`)
       .then((res) => res.json())
@@ -25,31 +29,35 @@ export default function TeamCard({ teamId, teamName, handleClose }) {
           (team) => team.full_name === teamName
         );
         if (specificTeam) {
-          setTeamData(specificTeam);
+            setTeamData(specificTeam);  // If the team is found, update the teamData state.
         } else {
           console.log("No matching team found");
         }
       })
       .catch((err) => {
-        console.error("Fetch error:", err);
+          console.error("Fetch error:", err);  // Log any errors during fetch.
       });
+
+      // Fetch the active players of the specified team by team ID.
     fetch(
       `http://${config.server_host}:${config.server_port}/players/active/${teamId}`
     )
       .then((res) => res.json())
       .then((allTeamMembers) => {
-        setTeamMembers(allTeamMembers.slice(0, 15));
+          setTeamMembers(allTeamMembers.slice(0, 15)); // Limit to the first 15 members for simplicity
       })
       .catch((err) => {
         console.error("Fetch error:", err);
       });
   }, [teamName, teamId]);
 
+    // State and handler for managing active tab in the UI.
   const [currentTab, setCurrentTab] = useState("1");
   const handleChange = (event, newValue) => {
-    setCurrentTab(newValue);
+      setCurrentTab(newValue);  // Update the currentTab state when a new tab is selected.
   };
 
+    // Main render function for the TeamCard component.
   return (
     <Modal
       open={true}

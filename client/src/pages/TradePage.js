@@ -1,55 +1,42 @@
 import React, {useEffect, useState} from 'react';
-import { Container, Grid, InputLabel,Button,NativeSelect, TextField,InputAdornment,Stack,Card,FormControl, DialogTitle,Modal,Dialog, Paper, Select, MenuItem, FormControlLabel,Radio,Box, List ,ListItemButton,ListItemText} from '@mui/material';
+import { Container, Grid, InputLabel,Button, TextField,InputAdornment,Stack,FormControl, DialogTitle,Dialog, Paper, Select, MenuItem,Radio,Box, List ,ListItemButton,ListItemText} from '@mui/material';
 import { styled } from '@mui/material/styles';
 
-import { DataGrid } from '@mui/x-data-grid';
-import SongCard from '../components/SongCard';
 import config from "../config.json";
-import axios from "axios";
 
- function  TradePage() {
+
+function TradePage() {
+    // Fetches initial team list when component mounts and handles search submission
   useEffect( () => {
-      handleSubmit()
+      handleSubmit() // Preemptively call handleSubmit to apply any existing search criteria
       fetch(`http://${config.server_host}:${config.server_port}/teamlists`)
           .then(res => res.json())
           .then(resJson => {
-              if (Array.isArray(resJson)){
-                  setTeamList(resJson)
+              if (Array.isArray(resJson)) { // Check if response is an array
+                  setTeamList(resJson)   // Update state with team list
               }
           });
   }, []);
   
-  const [teamList, setTeamList] = useState([]);
-  const [selectedPlayer, setSelectedPlayer] = useState(null);
-  const [modalOpen, setModalOpen] = useState(false);
+    const [teamList, setTeamList] = useState([]);  // State to hold list of teams
 
+    // State hooks for managing search parameters and results
+    const [searchForm, SetSearchForm] = useState({});  // State for storing search form input
+    const [playerList, setPlayerList] = useState([]);  // State to hold list of players in a team
+    const [playerInfo, setPlayerInfo] = useState({});  // State to hold individual player information
+    const [detailPlayerInfo, setDetailPlayerInfo] = useState({});  // State for detailed player information in a dialog
+    const [playerInfoList, setPlayerInfoList] = useState([]);  // State to hold list of players from search results
+    const [onShow, setOnShow] = useState(false);  // State to control visibility of the detail dialog
+    const [team, setTeam] = useState('');  // State to hold selected team ID
+    const [playerId, setPlayerId] = useState('');  // State to hold selected player ID
 
-  const handlePlayerClick = (player) => {
-    setSelectedPlayer(player);
-    setModalOpen(true);
-  };
-//Random on the trade
-  const handleTrade = () => {
-    const success = Math.random() < 0.5;
-    alert(success ? 'Trade successful!' : 'Trade failed.');
-    setModalOpen(false);
-  };
-
-  const [searchForm , SetSearchForm] = useState({})
-  const [playerList, setPlayerList] = useState([])
-     const [playerInfo, setPlayerInfo] = useState({});
-     const [detailPlayerInfo, setDetailPlayerInfo] = useState({});
- const [playerInfoList, setPlayerInfoList] = useState([]);
- const [onShow, setOnShow] = useState(false)
-     const [team, setTeam] = useState('')
-     const [ playerId, setPlayerId] = useState('')
-  const [selectedIndex, setSelectedIndex] = React.useState(1);
+    // Handles form submission for player search
   const handleSubmit = () =>{
     let paramsArray = [];
     let url = `http://${config.server_host}:${config.server_port}/trade_page_search`
     Object.keys(searchForm).forEach(key => paramsArray.push(key + '=' + searchForm[key]))
     if (url.search(/\?/) === -1) {
-      url += '?' + paramsArray.join('&')
+        url += '?' + paramsArray.join('&')  // Append parameters to URL
     } else {
       url += '&' + paramsArray.join('&')
     }
@@ -58,7 +45,7 @@ import axios from "axios";
         .then(resJson => {
           if (Array.isArray(resJson)){
               console.log(resJson)
-              setPlayerInfoList(resJson)
+              setPlayerInfoList(resJson)  // Update state with search results
           }
         });
 
@@ -69,7 +56,7 @@ import axios from "axios";
           .then(res => res.json())
           .then(resJson => {
               if (Array.isArray(resJson)){
-                  setPlayerList(resJson)
+                  setPlayerList(resJson)  // Update player list with fetched data
 
               }
           });
@@ -77,9 +64,9 @@ import axios from "axios";
   //trade the player into the team list
   const handleTransaction = ()=>{
       console.log(playerId>=0)
-      if (!playerId&&!team) return  alert('please select a player')
+      if (!playerId && !team) return alert('please select a player')  // Validation for selections
       if (!team) return  alert('please select team')
-      if (Math.ceil(Math.random()*10)>5){
+      if (Math.ceil(Math.random() * 10) > 5) {   // Simulate a trade success condition
           setTimeout(()=>{
               setPlayerList([...playerList, {...playerInfo,player_name:playerInfo.first_name + "  " + playerInfo.last_name}])
           },1000)
@@ -89,16 +76,14 @@ import axios from "axios";
       }
 
   }
-  const handleDetail = (e)=>{
-      setDetailPlayerInfo(e)
-      setOnShow(true)
-  }
-  const handleEmpty = ()=>{
-      SetSearchForm({})
-      setPlayerInfoList([])
-  }
-  const handleListItemClick = (event, index,) => {setSelectedIndex(index);};
+    // Opens detail dialog for player
+    const handleDetail = (e) => {
+        setDetailPlayerInfo(e);  // Set detailed information for player
+        setOnShow(true);  // Show detail dialog
+    };
+ 
 
+    // Styled component for displaying items
   const Item = styled(Paper)(({ theme }) => ({
     backgroundColor: theme.palette.mode === 'dark' ? '#1A2027' : '#fff',
     ...theme.typography.body2,
@@ -107,6 +92,8 @@ import axios from "axios";
     color: theme.palette.text.secondary,
     flexGrow: 1,
   }));
+
+    // Main render block for the TradePage component
   return (
     <Container >
       <h2>Search Player</h2>  
@@ -215,22 +202,11 @@ import axios from "axios";
             </Select>
           </FormControl>
           <Button style={{margin: '10px 0 0 10px'}} variant="contained" onClick={handleTeamSearch}>search</Button>
-
-            {/*<TextField*/}
-            {/*    label="team"*/}
-            {/*    id="standard-start-adornment"*/}
-            {/*    onChange={(e)=>{*/}
-            {/*        setTeam(e.target.value)*/}
-            {/*    }}*/}
-            {/*    variant="standard"*/}
-            {/*/>*/}
             <Box sx={{  bgcolor: 'background.paper' }} style={{maxHeight:'50vh', overflow:"auto" }}>
             <List component="nav" aria-label="secondary mailbox folder">
               {playerList.map((player) => (
                   <ListItemButton
                       style={{boxShadow: '2px 2px 4px 1px rgba(0,0,0,.1)'}}
-                      // selected={selectedIndex === player.id}
-                      // onClick={(event) => handleListItemClick(event, player.id)}
                   >
                     <ListItemText primary={player.player_name}/>
                   </ListItemButton>
@@ -240,18 +216,7 @@ import axios from "axios";
         </Grid>
         <Grid item xs={8}>
             <Box sx={{  bgcolor: 'background.paper' }} style={{maxHeight:'50vh', overflow:"auto" }}>
-                {/*<RadioGroup*/}
-                {/*    aria-labelledby="demo-radio-buttons-group-label"*/}
-                {/*    defaultValue="female"*/}
-                {/*    name="radio-buttons-group"*/}
-                {/*>*/}
-                {/*    {playerInfoList.map((player)=>(*/}
-                {/*        <FormControlLabel value={player.person_id} control={<Radio />} label={player.first_name + "  "+ player.last_name} />*/}
-                {/*        )*/}
-                {/*    )*/}
-
-                {/*    }*/}
-                {/*</RadioGroup>*/}
+              
                 <List component="nav" aria-label="secondary mailbox folder">
                     {playerInfoList.map((player) => (
                         <Grid container style={{    alignItems: 'center'}}>
@@ -279,7 +244,6 @@ import axios from "axios";
         <Dialog onClose={()=> setOnShow(false)} open={onShow}>
             <DialogTitle>PlayerInformation</DialogTitle>
             <Box  sx={{ bgcolor: 'background.paper',padding:'20px'}}>
-              {/*<Card sx={{}} >*/}
                   <>
                 <Stack spacing={{ xs: 1, sm: 2 }} direction="row" useFlexGap flexWrap="wrap">
                   <Item>Name: {detailPlayerInfo.first_name + detailPlayerInfo.last_name}</Item>
@@ -292,25 +256,11 @@ import axios from "axios";
                   <Item>School: {detailPlayerInfo.school}</Item>
                 </Stack>
                   </>
-              {/*</Card>*/}
             </Box>
             <Button style={{marginTop: '10px',display:'flex', justifyContent:'center'}} variant="contained" onClick={()=> setOnShow(false)}>Confirm</Button>
 
         </Dialog>
 
-      {/* UI and logic */}
-      {/* ... */}
-      {/*{selectedPlayer && (*/}
-      {/*  <Modal*/}
-      {/*    open={modalOpen}*/}
-      {/*    onClose={() => setModalOpen(false)}*/}
-      {/*  >*/}
-      {/*    <Box sx={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: 400, bgcolor: 'background.paper', border: '2px solid #000', boxShadow: 24, p: 4 }}>*/}
-      {/*      /!*<PlayersCard player={selectedPlayer} handleClose={() => setModalOpen(false)} />*!/*/}
-      {/*      <Button onClick={handleTrade} style={{ marginTop: 20 }}>Trade</Button>*/}
-      {/*    </Box>*/}
-      {/*  </Modal>*/}
-      {/*)}*/}
     </Container>
   );
 }
