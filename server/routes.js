@@ -146,7 +146,8 @@ const tradePageSearch = function (req, res) {
       AND common_player_info.age >= ?
       AND common_player_info.age <= ?
       AND common_player_info.rosterstatus = 'Active'
-    ORDER BY common_player_info.last_name ASC;
+    ORDER BY common_player_info.last_name ASC
+    LIMIT 15;
   `;
 
   connection.query(query, [heightLow, heightHigh, weightLow, weightHigh, ageLow, ageHigh], (err, data) => {
@@ -183,7 +184,7 @@ const get_team_players = function (req, res) {
     SELECT DISTINCT
       team_player.team_name,
       team_player.player_name
-    FROM team_player;
+    FROM team_player ;
   `;
 
   connection.query(query, [teamId], (err, data) => {
